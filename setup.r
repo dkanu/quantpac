@@ -17,7 +17,6 @@ end.date <- '20190123'
 ## DATA MANIPULATION
 ###############################
 stocks.df <- lapply(basket, GrabData, from = start.date, to = end.date)
-stocks.df <- lapply(stocks.df, CalculateSettlementPrice) # Calulate Midpoint (i.e settlment)
 names(stocks.df) <- basket
 stocks.xts <- lapply(stocks.df, Frame2Xts) #Turn Data Frame int XTS Object
 stocks.xts <- lapply(stocks.xts, PLag4) # Calcualte Lags
