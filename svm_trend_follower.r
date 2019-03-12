@@ -38,7 +38,7 @@ fb.svm.model <- svm(fb.svm.formula, data = data.split$train.data, kernel = kern_
 fb.svm.eval <- SvmEval2(fb.svm.model, data.split$test.data)
 #AMD-----------------------
 amd.svm.factors <- c('LR1.8', 'LR3.8','LR1','LR3','LR1.1','LR3.1','LR1.10', 'LR3.10')
-amd.svm.formula <- as.formula(paste('as.factor(PosR.8)~', paste(amd.factors, collapse = '+')))
+amd.svm.formula <- as.formula(paste('as.factor(PosR.8)~', paste(amd.svm.factors, collapse = '+')))
 amd.svm.model <- svm(amd.svm.formula, data = data.split$train.data, kernel = kern_type)
 amd.svm.eval <- SvmEval2(amd.svm.model, data.split$test.data)
 ############################
@@ -53,9 +53,7 @@ names(models) <- basket2
 ##############################
 ## FILENAME DETAILS
 ##############################
-filename <- sprintf("%s ANALYSIS %s.txt", 
-                    "SVM", 
-                    toString(format(Sys.time(), "%Y-%m-%d %H-%M-%S")))
+filename <- sprintf("%s ANALYSIS %s.txt", "SVM", toString(format(Sys.time(), "%Y-%m-%d %H-%M-%S")))
 ############################
 ## SAVE TO FILE
 ############################
