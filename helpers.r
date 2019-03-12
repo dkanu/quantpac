@@ -23,99 +23,7 @@ Frame2Xts <- function(x){
   x.xts$Date <- NULL
   x.xts
 }
-CalculateSettlementPrice <- function(x){
-  # Calculate the settlement price, (open + close)/2.
-  # Args:
-  #   x: A dataframe returned by the GrabData function.
-  # Returns: A dataframe with Date, Open, High, Low, Close, Volume, and Set columns
-  x$Set <- ((x$Open + x$Close)/2)
-  return(x)
-}
-GetColumn <- function(x, name){
-  # Retrieves a column from a dataframe.
-  # Args:
-  #   x: A dataframe.
-  #   name: The name of the column to be retireived
-  # Returns: A column of the data frame. 
-  # Column type is variable, but prefer numeric typing.
-  x[[name]]
-}
-PlotColumn <- function(x, name){
-  # Plot column of a dataframe as a line
-  # Args:
-  #   x: A dataframe
-  #   name: The name of the column to be plotted 
-  # Returns: Null. Draws R base graphics plot
-  plot(x[[name]], type = 'l')
-}
 # ANALYSIS HELPER FUNCTIONS
-TimeSeriesBoot <- function(x, col = "Set", fun){
-  # Performs a geometric time series block bootstrap for a given statistic.
-  # Args:
-  #   x: A dataframe
-  #   col: String providing the name of the column to be used in the bootstrap
-  # Returns: tsboot object
-  means <- tsboot(x[,c(col)], fun, R = 100, l = 5, sim="geom")
-}
-BootstrapCis <- function(x){
-  #Plot boot strapped confidence intervals.
-  # Args:
-  #   x: a boot object
-  # Returns: list of of format list(mean, percnetile bootstrap)
-  lambda <- boot.ci(x, type = "perc", conf = c(0.95, 0.66, 0.5))
-  list(lambda$t0, lambda$percent)
-}
-VectorComapre <- function(v, x = 0, c = '>'){
-  # Calculate percentage of times values contained in a vector 
-  # are above (below) some constant
-  # Args:
-  #   v: A numeric vector
-  #   x: A numeric value
-  #   c: string accepts values '>' (or '<')
-  # Returns: Numeric indicating fraction of times values in a 
-  # vector are above (or below) some constant
-  if (c == '>'){return(length(v[v>x])/length(v))}
-  if (c == '<'){return(length(v[v<x])/length(v))}
-}
-VectorHistogram <- function(v, vline = mean(v)){
-  # Plot vector values as a histogram.
-  # Args:
-  #   v: A numeric vector
-  #   vline: A numeric value that indicates where a vertical line should be drawn
-  # Returns: NULL, draws R base graphics plot
-  hist(v, labels = TRUE)
-  abline(v = vline, col = "red")
-}
-VectorNumberLine <- function(v, v.names, x = mean(v)){
-  # Plot scatterplot of vector values.
-  # Args:
-  #   v: A numeric vector
-  #   x: Numerical value to make comparisons against
-  #   v.names: A caracter vector containing names coresponding to v
-  # Returns: NULL, draws R base graphics plot
-  plot(v, integer(length(v)), 
-       ylim = c(-1,1),
-       pch=18, col="blue", yaxt='n')
-  abline(v=x)
-  text(v, integer(length(v)), v.names, 
-       cex=0.6, pos=4, col="red", srt = 270)
-}
-GetOutlay <- function(x, d, f = c(0,5,20,30)){
-  # Returns rows for series a number of day out
-  # Args:
-  #   x = xts object
-  #   d = inital date, that will be passed to xts object
-  #   f = vector of delta for days out
-  # Returns: xts with rows for days out from original
-  i <- match(index(x[d]), index(x))
-  frame <- x[f+i]
-  comparisons <- ifelse(as.numeric(frame$Set[1]) > as.numeric(frame$Set), -1, 1)
-  comparisons[1] <- 0
-  differences <- round(as.vector(frame$Set) - as.numeric(frame$Set[1]), digits = 2)
-  pctchange <- round((as.vector(frame$Set) / as.numeric(frame$Set[1]) - 1)*100, digits = 2)
-  frame <- cbind(frame, differences, pctchange, comparisons)
-  return(data.frame(date=index(frame), coredata(frame)))
-}
 KellyCriterion <- function(p.hat, p.given){
   # Proportion bets based on disparity between given odds and true odds
   # Args:
@@ -168,47 +76,6 @@ LiveTestSplit <- function(x, start, stop){
   formated.date <- sprintf("%s/%s", dates[1], dates[2])
   x[formated.date]
 }
-#TODO(dkanu): This function may need some work
-LogitEval <- function(model, model.factors, data, cut.point = 0.5){
-  # Feed in logistic regression model, model factors, and data to be tested on
-  # Args:
-  #   model: logistic regresion model object
-  #   model.factors: vecotr of strings that list out facotrs to be used in the logistic regression model
-  #   test.data: data series for the model to be tested on
-  #
-  # Returns:
-  # A list with ROC Analysis for each variable in the model, evaluation matrix copmaring predicted probabilities
-  # and actual behavior. Number of correct predictions, and proportion of correct predictions
-  
-  # Grab row containing dependent varaible for later use ---------------
-   test.check <- data[, c(strsplit(as.character(model$formula), ' ')[[1]][1])]
-  # ROC ANALYSIS -------------------
-  # Cover plotting behavior for varying number of factors
-  ## logit.roc <- roc(model$formula, data = test.data)
-  ## invisible(ifelse(length(model.factors) == 1, plot(logit.roc), lapply(logit.roc, plot, col = 'red')))
-  # EVALUATION MATRIX: More useful to checking logic ----------------------
-  ## logit.pred <- predict(model, test.data, type = "response")
-  ## evaluation.vec <- cbind(logit.pred, as.vector(test.check))
-  ## colnames(evaluation.vec) <- c('p', 'actual')
-  ## evaluation.vec
-  ## evaluation.xts <- as.xts(evaluation.vec)
-  ## evaluation.xts$outcome <- ifelse(evaluation.xts$p > .5, 1, 0)
-  ## evaluation.xts$correct <- ifelse(evaluation.xts$outcome == evaluation.xts$actual, 1, 0)
-  ## evaluation.xts <- evaluation.xts[,c(1,3,2,4)]
-  ## pct.cc <- sum(evaluation.xts$correct)/length(evaluation.xts$correct)
-  # CONFUSION MATRIX ---------------
-  pred <- predict(model, data, type = "response")
-  pred <- ifelse(pred > cut.point, 1, 0)
-  m.confusion <- table(Predicted = pred, Actual = test.check)
-  accuracy <- as.numeric(sum(diag(m.confusion))/sum(m.confusion))
-  # OUTPUT -----------------------
-  ## out <- list(logit.roc, evaluation.xts, pct.cc, m.confusion)
-  ## names(out) <- c("ROC","evaluation matrix", "accuracy", "confusion matrix")
-  out <- list(accuracy, m.confusion)
-  names(out) <- c("accuracy", "m.confusion")
-  out
-}
-#TODO(dkanu): Add documentation comparing LogitEval to LogitEval2
 LogitEval2 <- function(model, data, cut.point = 0.5){
   # Feed in logistic regression model, model factors, and data to be tested on
   # Args:
@@ -235,6 +102,7 @@ LogitPred <- function(model, data, tol = 0.5, action = 'long'){
   names(out) <- c('type', 'pred_prob', 'decision')
   out
 }
+#TODO(dkanu): Add documentations and comment
 SvmPred <- function(model, data, action = 'long'){
   pred_prob <- predict(model, newdata = data)
   if(action == 'long'){decision <- ifelse(pred_prob == 1, 1, 0)}
@@ -262,15 +130,4 @@ SvmEval2 <- function(model, data){
   out <- list(accuracy, m.confusion)
   names(out) <- c("accuracy", "m.confusion")
   out
-}
-SubsetAccuracy <- function(x, tol = 0.5){
-  # Function to be used with base stats 'Filter' function,
-  # returns objects with accuracy greter than 'tol'
-  # Args:
-  #   x: object with 'accuracy' property
-  #   tol: tolerance used for filtering the property attribute
-  # Returns: objects with accuracy property greater than tolerance
-  # Alternatevly just use an anonymous function inline - more practical
-  # 'Filter(function(x) x$accuracy > 0.5, evaluations)'
-  x$accuracy > tol
 }
