@@ -235,6 +235,14 @@ LogitPred <- function(model, data, tol = 0.5, action = 'long'){
   names(out) <- c('type', 'pred_prob', 'decision')
   out
 }
+SvmPred <- function(model, data, action = 'long'){
+  pred_prob <- predict(model, newdata = data)
+  if(action == 'long'){decision <- ifelse(pred_prob == 1, 1, 0)}
+  if(action == 'short'){decision <- ifelse(pred_prob == 0, 1, 0)}
+  out <- list(action, decision)
+  names(out) <- c('type', 'classification')
+  out
+}
 SvmEval2 <- function(model, data){
   # Feed in logistic regression model, model factors, and data to be tested on
   # Args:
